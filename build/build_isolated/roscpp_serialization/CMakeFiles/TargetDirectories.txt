@@ -1,3 +1,0 @@
-/home/wil/projects/research/rosbeam/build/build_isolated/roscpp_serialization/CMakeFiles/roscpp_serialization.dir
-/home/wil/projects/research/rosbeam/build/build_isolated/roscpp_serialization/CMakeFiles/_catkin_empty_exported_target.dir
-/home/wil/projects/research/rosbeam/build/build_isolated/roscpp_serialization/CMakeFiles/doxygen.dir

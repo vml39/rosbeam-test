@@ -1,8 +1,0 @@
-prefix=/home/wil/projects/research/rosbeam/build/install_isolated
-
-Name: cpp_common
-Description: Description of cpp_common
-Version: 0.5.5
-Cflags: -I/home/wil/projects/research/rosbeam/build/install_isolated/include -I/usr/include
-Libs: -L/home/wil/projects/research/rosbeam/build/install_isolated/lib -lcpp_common /usr/lib64/libboost_system.a /usr/lib64/libboost_thread.a
-Requires: 

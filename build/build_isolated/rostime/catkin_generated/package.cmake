@@ -1,8 +1,0 @@
-set(_CATKIN_CURRENT_PACKAGE "rostime")
-set(rostime_BUILD_DEPENDS "boost" "cpp_common")
-set(rostime_RUN_DEPENDS "boost" "cpp_common")
-set(rostime_MAINTAINER "Dirk Thomas <dthomas@osrfoundation.org>")
-set(rostime_DEPRECATED "")
-set(rostime_BUILDTOOL_DEPENDS_catkin_VERSION_GTE "0.5.68")
-set(rostime_VERSION "0.5.5")
-set(rostime_BUILDTOOL_DEPENDS "catkin")

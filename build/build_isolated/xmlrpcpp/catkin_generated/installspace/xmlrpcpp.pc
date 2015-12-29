@@ -1,8 +1,0 @@
-prefix=/home/wil/projects/research/rosbeam/build/install_isolated
-
-Name: xmlrpcpp
-Description: Description of xmlrpcpp
-Version: 1.11.10
-Cflags: -I/home/wil/projects/research/rosbeam/build/install_isolated/include
-Libs: -L/home/wil/projects/research/rosbeam/build/install_isolated/lib -lxmlrpcpp
-Requires: cpp_common
