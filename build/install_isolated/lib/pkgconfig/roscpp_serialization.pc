@@ -1,0 +1,8 @@
+prefix=/home/wil/projects/research/rosbeam/build/install_isolated
+
+Name: roscpp_serialization
+Description: Description of roscpp_serialization
+Version: 0.5.5
+Cflags: -I/home/wil/projects/research/rosbeam/build/install_isolated/include
+Libs: -L/home/wil/projects/research/rosbeam/build/install_isolated/lib -lroscpp_serialization
+Requires: cpp_common roscpp_traits rostime

@@ -1,0 +1,3 @@
+/home/wil/projects/research/rosbeam/build/build_isolated/xmlrpcpp/CMakeFiles/xmlrpcpp.dir
+/home/wil/projects/research/rosbeam/build/build_isolated/xmlrpcpp/CMakeFiles/_catkin_empty_exported_target.dir
+/home/wil/projects/research/rosbeam/build/build_isolated/xmlrpcpp/CMakeFiles/doxygen.dir

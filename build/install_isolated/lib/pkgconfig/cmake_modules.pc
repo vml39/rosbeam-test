@@ -1,0 +1,8 @@
+prefix=/home/wil/projects/research/rosbeam/build/install_isolated
+
+Name: cmake_modules
+Description: Description of cmake_modules
+Version: 0.3.3
+Cflags: 
+Libs: -L/home/wil/projects/research/rosbeam/build/install_isolated/lib 
+Requires: 

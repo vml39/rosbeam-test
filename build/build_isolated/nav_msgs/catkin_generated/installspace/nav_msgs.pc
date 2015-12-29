@@ -1,0 +1,8 @@
+prefix=/home/wil/projects/research/rosbeam/build/install_isolated
+
+Name: nav_msgs
+Description: Description of nav_msgs
+Version: 1.11.7
+Cflags: -I/home/wil/projects/research/rosbeam/build/install_isolated/include
+Libs: -L/home/wil/projects/research/rosbeam/build/install_isolated/lib 
+Requires: geometry_msgs message_runtime std_msgs

@@ -1,0 +1,2 @@
+/usr/bin/ar cq /home/wil/projects/research/rosbeam/build/devel_isolated/roscpp_serialization/lib/libroscpp_serialization.a  CMakeFiles/roscpp_serialization.dir/src/serialization.cpp.o
+/usr/bin/ranlib /home/wil/projects/research/rosbeam/build/devel_isolated/roscpp_serialization/lib/libroscpp_serialization.a

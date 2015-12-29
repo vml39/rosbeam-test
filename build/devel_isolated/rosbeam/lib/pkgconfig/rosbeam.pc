@@ -1,0 +1,8 @@
+prefix=/home/wil/projects/research/rosbeam/build/devel_isolated/rosbeam
+
+Name: rosbeam
+Description: Description of rosbeam
+Version: 0.1.0
+Cflags: 
+Libs: -L/home/wil/projects/research/rosbeam/build/devel_isolated/rosbeam/lib 
+Requires: message_runtime std_msgs nav_msgs geometry_msgs tf2_msgs

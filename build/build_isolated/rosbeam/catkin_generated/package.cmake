@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "rosbeam")
+set(rosbeam_RUN_DEPENDS "message_runtime" "rosconsole" "roscpp" "roscpp_serialization" "rostime" "std_msgs" "nav_msgs" "geometry_msgs" "tf2_msgs")
+set(rosbeam_BUILDTOOL_DEPENDS "catkin")
+set(rosbeam_DEPRECATED "")
+set(rosbeam_BUILD_DEPENDS "message_generation" "rosconsole" "roscpp" "roscpp_serialization" "rostime" "std_msgs" "nav_msgs" "geometry_msgs" "tf2_msgs")
+set(rosbeam_VERSION "0.1.0")
+set(rosbeam_MAINTAINER "Chad Jenkins <odest_jenkins@brown.edu>")

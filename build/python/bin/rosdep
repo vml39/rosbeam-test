@@ -1,0 +1,4 @@
+#!/home/wil/projects/research/rosbeam/build/python/bin/python3
+
+from rosdep2.main import rosdep_main
+rosdep_main()
