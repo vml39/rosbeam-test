@@ -15,6 +15,7 @@ set(T "bridge")
 add_executable(${T}
   src/bridge.cc
 )
+
 target_link_libraries(${T} ${catkin_LIBRARIES} rt)
 set_target_properties(${T} PROPERTIES LINK_FLAGS "-static-libstdc++ -static-libgcc")
 add_custom_command(TARGET ${T} POST_BUILD COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${T}>)
@@ -27,3 +28,14 @@ add_library(${T} SHARED
 set_target_properties(${T} PROPERTIES COMPILE_FLAGS "-fno-lto -fvisibility=hidden" LINK_FLAGS "-fno-lto -Wl,--version-script -Wl,${CMAKE_SOURCE_DIR}/versions.txt")
 target_link_libraries(${T} dl rt ${CMAKE_THREAD_LIBS_INIT})
 install(TARGETS ${T} LIBRARY DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+set(T "inspector")
+add_executable(${T}
+  src/inspector.cc
+)
+
+
+target_link_libraries(${T} ${catkin_LIBRARIES} rt)
+set_target_properties(${T} PROPERTIES LINK_FLAGS "-static-libstdc++ -static-libgcc")
+add_custom_command(TARGET ${T} POST_BUILD COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${T}>)
+install(TARGETS ${T} RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
