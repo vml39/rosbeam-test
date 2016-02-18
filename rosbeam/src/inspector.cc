@@ -118,7 +118,7 @@ void tail_shm(int shm_mode)
         {
             continue;
         }
-        
+
         //we're doing ad-hoc read-only from shm, so forget about locks.
         if (shm_mode == SHM_CMD)
         {
@@ -139,10 +139,6 @@ void print_usage()
     printf("Usage: inspector [ cmd_vel | list_topics | shm $LOCATION ] \n");
 }
 
-
-/* Two inspection modes: 1) rostopic debugging, 2) Shared Memory debugging
-     * for shared memory, it is necessary to provide the 
- */
 int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -156,9 +152,6 @@ int main(int argc, char **argv)
     if (mode == "--usage" || mode == "--help")
     {
         printf("Usage: inspector [ cmd_vel | list_topics | shm [cmd | stat]] \n");
-        //printf("    * cmd_vel - echo velocity data on /cmd_vel topic \n");
-        //printf("    * list_topics - see all ROS topics on beam\n");
-        //printf("    * shm [ cmd | stat ] - inspect shared memory, either for drive command (cmd) or status (stat)\n");
         exit(EXIT_SUCCESS);
     }
     else if (mode == "cmd_vel")
