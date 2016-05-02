@@ -146,8 +146,7 @@ public:
 		}
 
 		struct drive_command cmd = {DRIVE_COMMAND_MAGIC, 1,
-			lin_vel*65536, ang_vel*65536, 0, -1,
-			1.5*65536, 1.5*65536, 2.0*65536, 0.5*65536, -1};
+			lin_vel*65536, ang_vel*65536, 0, -1, -1};
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 

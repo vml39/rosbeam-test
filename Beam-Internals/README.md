@@ -219,7 +219,11 @@ Brown University @0 stable_2.10.4 st@beam101095228:~$ sudo strace -etrace=read,w
 ...
 ```
 
-It can be observed that texclient is sending packets of fixed size of 48 bytes, and receiving packets of fixed size of 128 bytes. There must be a format for the packets.
+**Updated on 5/02/2016 to reflect new drive control packet format**
+
+It can be observed that texclient is sending packets of fixed size of --48-- 32 
+bytes, and receiving packets of fixed size of 128 bytes. There must be a format 
+for the packets.
 
 Further testing using strace reveals texclient opens `/dev/st001` which is a symlink to `/dev/ttyACM0`, and texclient is linked to `/home/st/sw-dev/install/bin/libst001_lib.so`. Poking around in `/home/st/sw-dev/install/bin/` with `objdump` and `nm` can reveal more about the meaning of the packet format.
 
@@ -240,12 +244,8 @@ Offset | Size | Type | Meaning
 8 | 4 | fixed point | desired linear velocity
 12 | 4 | fixed point | desired angular velocity
 16 | 4 | unsigned int | "type" usually 0
-20 | 8 | unsigned int | limiter time-tag protecting against old commands 
-28 | 4 | fixed point | linear velocity limit
-32 | 4 | fixed point | angular velocity limit
-36 | 4 | fixed point | desired linear acceleration
-40 | 4 | fixed point | desired angular acceleration
-44 | 4 | unsigned int | CRC checksum
+20 | 8 | unsigned int | limiter time-tag protecting against old commands
+28 | 4 | unsigned int | CRC checksum
 
 * Here the 32-bit signed fixed point numbers are scaled by 65536.
 * texclient will send drive commands in 10Hz when idle, 100Hz when busy.
