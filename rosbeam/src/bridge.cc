@@ -23,15 +23,11 @@ class bridge_node {
 private:
 	ros::NodeHandle node;
 	ros::Publisher pubOdom, pubTf;
-	ros::Subscriber subVel, subConfig;
+	ros::Subscriber subVel;
 
 	boost::thread odomThread;
 
 	struct drive_shm *shm;
-
-	bool first_time, first_enc;
-	double x, y, theta;
-	double lin_calib, ang_calib;
 public:
 	bool start() {
 		int fd = shm_open(DRIVE_SHM_NAME, O_RDWR, 0);
@@ -49,11 +45,7 @@ public:
 			return false;
 		}
 
-		lin_calib = 1.0;
-		ang_calib = 1.0;
-
 		subVel = node.subscribe("cmd_vel", 2, &bridge_node::sub_vel, this);
-		subConfig = node.subscribe("config", 2, &bridge_node::sub_config, this);
 
 		pubOdom = node.advertise<nav_msgs::Odometry>("odom", 50);
 		pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
@@ -63,19 +55,16 @@ public:
 		return true;
 	}
 
-	void reset() {
-		first_time = true;
-		first_enc = true;
-		x = 0.0;
-		y = 0.0;
-		theta = 0.0;
-	}
-
 	void process_odometry() {
+		bool first_time = true;
 		struct timespec stat_time;
 		struct drive_status stat;
+
+		double x = 0.0;
+		double y = 0.0;
+		double theta = 0.0;
 		double last_lin_enc, last_ang_enc;
-		reset();
+		bool first_enc = true;
 
 		while (ros::ok()) {
 			pthread_mutex_lock(&shm->stat_lock);
@@ -107,6 +96,8 @@ public:
 			double movement = lin_enc - last_lin_enc;
 			double rotation = ang_enc - last_ang_enc;
 			// add calibration factors
+			double lin_calib = 1.0;
+			double ang_calib = 1.0;
 			movement *= lin_calib;
 			rotation *= ang_calib;
 			last_lin_enc = lin_enc;
@@ -128,40 +119,26 @@ public:
 			odom.twist.twist.linear.x = lin_vel;
 			odom.twist.twist.angular.z = ang_vel;
 
-			odom.twist.twist.linear.z = movement;
-			odom.twist.twist.angular.x = rotation;
-
 			pubOdom.publish(odom);
 
-			// geometry_msgs::TransformStamped trans;
-			// trans.header.stamp = odom.header.stamp;
-			// trans.header.frame_id = odom.header.frame_id;
-			// trans.child_frame_id = odom.child_frame_id;
+			geometry_msgs::TransformStamped trans;
+			trans.header.stamp = odom.header.stamp;
+			trans.header.frame_id = odom.header.frame_id;
+			trans.child_frame_id = odom.child_frame_id;
 
-			// trans.transform.translation.x = odom.pose.pose.position.x;
-			// trans.transform.translation.y = odom.pose.pose.position.y;
-			// trans.transform.translation.z = odom.pose.pose.position.z;
-			// trans.transform.rotation = odom.pose.pose.orientation;
+			trans.transform.translation.x = odom.pose.pose.position.x;
+			trans.transform.translation.y = odom.pose.pose.position.y;
+			trans.transform.translation.z = odom.pose.pose.position.z;
+			trans.transform.rotation = odom.pose.pose.orientation;
 
-			// tf2_msgs::TFMessage tf2msg;
-			// tf2msg.transforms.push_back(trans);
-			// pubTf.publish(tf2msg);
+			tf2_msgs::TFMessage tf2msg;
+			tf2msg.transforms.push_back(trans);
+			pubTf.publish(tf2msg);
 		}
 	}
 
 	void join() {
 		odomThread.join();
-	}
-
-	void sub_config(const geometry_msgs::Twist::ConstPtr& msg) {
-		ROS_INFO("Config: lin_calib = %.2f, ang_calib = %.2f", msg->linear.x, msg->angular.z);
-		if(lin_calib == msg->linear.x && ang_calib == msg->angular.z)
-			return;
-
-		// set calibration factors
-		lin_calib = msg->linear.x;
-		ang_calib = msg->angular.z;
-		reset();
 	}
 
 	void sub_vel(const geometry_msgs::Twist::ConstPtr& msg) {
