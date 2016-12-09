@@ -95,21 +95,23 @@ public:
 
 			double movement = lin_enc - last_lin_enc;
 			double rotation = ang_enc - last_ang_enc;
-			// add calibration factors
-			double lin_calib = 1.0;
-			double ang_calib = 1.0;
-			movement *= lin_calib;
-			rotation *= ang_calib;
 			last_lin_enc = lin_enc;
 			last_ang_enc = ang_enc;
-			x += cos(theta + rotation/2) * movement;
-			y += sin(theta + rotation/2) * movement;
-			theta += rotation;
+
+			// add calibration factors
+			double lin_calib = 0.84;
+			double ang_calib = 1.0;
+			double movement_calib = movement * lin_calib;
+			double rotation_calib = rotation * ang_calib;
+
+			x += cos(theta + rotation_calib/2) * movement_calib;
+			y += sin(theta + rotation_calib/2) * movement_calib;
+			theta += rotation_calib;
 
 			nav_msgs::Odometry odom;
 			odom.header.stamp = time;
 			odom.header.frame_id = "odom";
-			odom.child_frame_id = "base_link";
+			odom.child_frame_id = "base";
 
 			odom.pose.pose.position.x = x;
 			odom.pose.pose.position.y = y;
@@ -124,19 +126,19 @@ public:
 
 			pubOdom.publish(odom);
 
-			// geometry_msgs::TransformStamped trans;
-			// trans.header.stamp = odom.header.stamp;
-			// trans.header.frame_id = odom.header.frame_id;
-			// trans.child_frame_id = odom.child_frame_id;
+			geometry_msgs::TransformStamped trans;
+			trans.header.stamp = odom.header.stamp;
+			trans.header.frame_id = odom.header.frame_id;
+			trans.child_frame_id = odom.child_frame_id;
 
-			// trans.transform.translation.x = odom.pose.pose.position.x;
-			// trans.transform.translation.y = odom.pose.pose.position.y;
-			// trans.transform.translation.z = odom.pose.pose.position.z;
-			// trans.transform.rotation = odom.pose.pose.orientation;
+			trans.transform.translation.x = odom.pose.pose.position.x;
+			trans.transform.translation.y = odom.pose.pose.position.y;
+			trans.transform.translation.z = odom.pose.pose.position.z;
+			trans.transform.rotation = odom.pose.pose.orientation;
 
-			// tf2_msgs::TFMessage tf2msg;
-			// tf2msg.transforms.push_back(trans);
-			// pubTf.publish(tf2msg);
+			tf2_msgs::TFMessage tf2msg;
+			tf2msg.transforms.push_back(trans);
+			pubTf.publish(tf2msg);
 		}
 	}
 
