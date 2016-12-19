@@ -126,19 +126,19 @@ public:
 
 			pubOdom.publish(odom);
 
-			geometry_msgs::TransformStamped trans;
-			trans.header.stamp = odom.header.stamp;
-			trans.header.frame_id = odom.header.frame_id;
-			trans.child_frame_id = odom.child_frame_id;
+			// geometry_msgs::TransformStamped trans;
+			// trans.header.stamp = odom.header.stamp;
+			// trans.header.frame_id = odom.header.frame_id;
+			// trans.child_frame_id = odom.child_frame_id;
 
-			trans.transform.translation.x = odom.pose.pose.position.x;
-			trans.transform.translation.y = odom.pose.pose.position.y;
-			trans.transform.translation.z = odom.pose.pose.position.z;
-			trans.transform.rotation = odom.pose.pose.orientation;
+			// trans.transform.translation.x = odom.pose.pose.position.x;
+			// trans.transform.translation.y = odom.pose.pose.position.y;
+			// trans.transform.translation.z = odom.pose.pose.position.z;
+			// trans.transform.rotation = odom.pose.pose.orientation;
 
-			tf2_msgs::TFMessage tf2msg;
-			tf2msg.transforms.push_back(trans);
-			pubTf.publish(tf2msg);
+			// tf2_msgs::TFMessage tf2msg;
+			// tf2msg.transforms.push_back(trans);
+			// pubTf.publish(tf2msg);
 		}
 	}
 
