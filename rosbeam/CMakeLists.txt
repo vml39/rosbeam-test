@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rosbeam C CXX)
 
 find_package(Boost REQUIRED COMPONENTS thread)
-find_package(catkin REQUIRED COMPONENTS roscpp rostime rosconsole roscpp_serialization)
+find_package(catkin REQUIRED COMPONENTS roscpp rostime rosconsole roscpp_serialization dynamic_reconfigure rosbeam)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
 
 include_directories(${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
-catkin_package(CATKIN_DEPENDS message_runtime std_msgs nav_msgs geometry_msgs tf2_msgs)
+catkin_package(CATKIN_DEPENDS message_runtime std_msgs nav_msgs geometry_msgs tf2_msgs dynamic_reconfigure)
 
 set(T "bridge")
 add_executable(${T}
