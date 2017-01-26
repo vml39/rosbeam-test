@@ -2,10 +2,6 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <tf2_msgs/TFMessage.h>
-#include <std_msgs/Empty.h>
-
-#include <rosbeam/RosBeamConfig.h>
-#include <dynamic_reconfigure/server.h>
 
 #include <boost/thread.hpp>
 
@@ -42,10 +38,6 @@ private:
 	double theta;
 	double last_lin_enc, last_ang_enc;
 	bool first_enc;
-
-	dynamic_reconfigure::Server<rosbeam::RosBeamConfig> dynamic_server;
-	dynamic_reconfigure::Server<rosbeam::RosBeamConfig>::CallbackType f;
-	rosbeam::RosBeamConfig config;
 public:
 	bool start() {
 		int fd = shm_open(DRIVE_SHM_NAME, O_RDWR, 0);
@@ -76,17 +68,7 @@ public:
 
 		odomThread = boost::thread(&bridge_node::process_odometry, this);
 
-		// Init dynamic reconfigure param server
-		f = boost::bind(&bridge_node::config_callback, this, _1, _2);
-		dynamic_server.setCallback(f);
-
 		return true;
-	}
-
-	void config_callback(rosbeam::RosBeamConfig &c, uint32_t level) {
-		// set all changed parameters
-		ROS_INFO("RosBeam Reconfigure Request");
-		config = c;
 	}
 
 	void publish_odometry() {
@@ -123,10 +105,10 @@ public:
 		last_ang_enc = ang_enc;
 
 		// add calibration factors
-		// double lin_calib = 0.84;
-		// double ang_calib = 1.0;
-		double movement_calib = movement * config.lin_calib;
-		double rotation_calib = rotation * config.ang_calib;
+		double lin_calib = 0.84;
+		double ang_calib = 1.0;
+		double movement_calib = movement * lin_calib;
+		double rotation_calib = rotation * ang_calib;
 
 		x += cos(theta + rotation_calib/2) * movement_calib;
 		y += sin(theta + rotation_calib/2) * movement_calib;
@@ -166,9 +148,10 @@ public:
 	}
 
 	void process_odometry() {
-		ros::Rate r(5);
+		ros::Rate r(4);
 		while (ros::ok()) {
-			// publish_odometry();
+			ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
+			publish_odometry();
 			r.sleep();
 		}
 	}
@@ -177,8 +160,8 @@ public:
 		odomThread.join();
 	}
 
-	void sub_empty(std_msgs::Empty msg) {
-		ROS_INFO("Got empty");
+	void sub_empty(geometry_msgs::Twist msg) {
+		ROS_INFO("Got publish odom request.");
 		publish_odometry();
 	}
 
