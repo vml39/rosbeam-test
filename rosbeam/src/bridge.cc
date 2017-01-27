@@ -148,7 +148,7 @@ public:
 	}
 
 	void process_odometry() {
-		ros::Rate r(4);
+		ros::Rate r(3);
 		while (ros::ok()) {
 			ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
 			publish_odometry();
