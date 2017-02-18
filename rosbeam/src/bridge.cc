@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/Empty.h>
 #include <tf2_msgs/TFMessage.h>
 
 #include <boost/thread.hpp>
@@ -160,7 +161,7 @@ public:
 		odomThread.join();
 	}
 
-	void sub_empty(geometry_msgs::Twist msg) {
+	void sub_empty(std_msgs::Empty msg) {
 		// ROS_INFO("Got publish odom request.");
 		publish_odometry();
 	}
