@@ -117,7 +117,7 @@ public:
 		nav_msgs::Odometry odom;
 		odom.header.stamp = time;
 		odom.header.frame_id = "odom";
-		odom.child_frame_id = "base";
+		odom.child_frame_id = "base_link";
 
 		odom.pose.pose.position.x = x;
 		odom.pose.pose.position.y = y;
@@ -132,25 +132,25 @@ public:
 
 		pubOdom.publish(odom);
 
-		// geometry_msgs::TransformStamped trans;
-		// trans.header.stamp = odom.header.stamp;
-		// trans.header.frame_id = odom.header.frame_id;
-		// trans.child_frame_id = odom.child_frame_id;
+		geometry_msgs::TransformStamped trans;
+		trans.header.stamp = odom.header.stamp;
+		trans.header.frame_id = odom.header.frame_id;
+		trans.child_frame_id = odom.child_frame_id;
 
-		// trans.transform.translation.x = odom.pose.pose.position.x;
-		// trans.transform.translation.y = odom.pose.pose.position.y;
-		// trans.transform.translation.z = odom.pose.pose.position.z;
-		// trans.transform.rotation = odom.pose.pose.orientation;
+		trans.transform.translation.x = odom.pose.pose.position.x;
+		trans.transform.translation.y = odom.pose.pose.position.y;
+		trans.transform.translation.z = odom.pose.pose.position.z;
+		trans.transform.rotation = odom.pose.pose.orientation;
 
-		// tf2_msgs::TFMessage tf2msg;
-		// tf2msg.transforms.push_back(trans);
-		// pubTf.publish(tf2msg);
+		tf2_msgs::TFMessage tf2msg;
+		tf2msg.transforms.push_back(trans);
+		pubTf.publish(tf2msg);
 	}
 
 	void process_odometry() {
 		ros::Rate r(3);
 		while (ros::ok()) {
-			ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
+			// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
 			publish_odometry();
 			r.sleep();
 		}
@@ -161,7 +161,7 @@ public:
 	}
 
 	void sub_empty(geometry_msgs::Twist msg) {
-		ROS_INFO("Got publish odom request.");
+		// ROS_INFO("Got publish odom request.");
 		publish_odometry();
 	}
 
