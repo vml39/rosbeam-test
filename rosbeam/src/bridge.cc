@@ -57,10 +57,10 @@ public:
 		}
 
 		subVel = node.subscribe("cmd_vel", 2, &bridge_node::sub_vel, this);
-		subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
+		// subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
 
 		pubOdom = node.advertise<nav_msgs::Odometry>("odom", 50);
-		// pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
+		pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
 
 		x = 0.0;
 		y = 0.0;
@@ -149,11 +149,11 @@ public:
 	}
 
 	void process_odometry() {
-		ros::Rate r(3);
+		// ros::Rate r(10);
 		while (ros::ok()) {
 			// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
 			publish_odometry();
-			r.sleep();
+			// r.sleep();
 		}
 	}
 
@@ -161,10 +161,10 @@ public:
 		odomThread.join();
 	}
 
-	void sub_empty(std_msgs::Empty msg) {
-		// ROS_INFO("Got publish odom request.");
-		publish_odometry();
-	}
+	// void sub_empty(std_msgs::Empty msg) {
+	// 	// ROS_INFO("Got publish odom request.");
+	// 	publish_odometry();
+	// }
 
 	void sub_vel(const geometry_msgs::Twist::ConstPtr& msg) {
 		double lin_vel = msg->linear.x;
