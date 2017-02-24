@@ -106,8 +106,8 @@ public:
 		last_ang_enc = ang_enc;
 
 		// add calibration factors
-		double lin_calib = 0.84;
-		double ang_calib = 1.0;
+		double lin_calib = 1.0;
+		double ang_calib = 1.027;
 		double movement_calib = movement * lin_calib;
 		double rotation_calib = rotation * ang_calib;
 
