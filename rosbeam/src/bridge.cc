@@ -39,6 +39,9 @@ private:
 	double theta;
 	double last_lin_enc, last_ang_enc;
 	bool first_enc;
+
+	ros::Time time_last_req;
+
 public:
 	bool start() {
 		int fd = shm_open(DRIVE_SHM_NAME, O_RDWR, 0);
@@ -57,7 +60,7 @@ public:
 		}
 
 		subVel = node.subscribe("cmd_vel", 2, &bridge_node::sub_vel, this);
-		// subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
+		subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
 
 		pubOdom = node.advertise<nav_msgs::Odometry>("odom", 50);
 		pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
@@ -85,7 +88,7 @@ public:
 		stat = shm->stat;
 		pthread_mutex_unlock(&shm->stat_lock);
 
-		ROS_INFO("Publishing Odometry");
+		// ROS_INFO("Publishing Odometry");
 		ros::Time time = ros::Time::now();
 
 		double lin_enc = (stat.encoder_1 - stat.encoder_2) * 0.0040578907f;
@@ -149,11 +152,16 @@ public:
 	}
 
 	void process_odometry() {
+
 		// ros::Rate r(10);
 		while (ros::ok()) {
-			// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
-			publish_odometry();
-			// r.sleep();
+			double since_last_req = (ros::Time::now() - time_last_req).toSec();
+			ROS_INFO("since_last_req: %.3f", since_last_req);
+			if (since_last_req > 1.0) {
+				// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
+				publish_odometry();
+				// r.sleep();
+			}
 		}
 	}
 
@@ -161,10 +169,11 @@ public:
 		odomThread.join();
 	}
 
-	// void sub_empty(std_msgs::Empty msg) {
-	// 	// ROS_INFO("Got publish odom request.");
-	// 	publish_odometry();
-	// }
+	void sub_empty(std_msgs::Empty msg) {
+		// ROS_INFO("Got publish odom request.");
+		time_last_req = ros::Time::now();
+		publish_odometry();
+	}
 
 	void sub_vel(const geometry_msgs::Twist::ConstPtr& msg) {
 		double lin_vel = msg->linear.x;
