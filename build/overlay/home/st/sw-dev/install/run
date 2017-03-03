@@ -37,6 +37,9 @@ cp /etc/sudoers.st /etc/sudoers
 chown root.root /etc/sudoers
 chmod 440 /etc/sudoers
 
+##### Remove initctl to prevent usage #####
+rm /sbin/initctl
+
 ##### Create upstart directory for logrotate #####
 mkdir -p /var/log/upstart
 
@@ -159,7 +162,7 @@ elif [ "${BEAM_PLATFORM}" = "cleveland" ]; then
   log_message Load modules
   modprobe -a ath9k uvcvideo coretemp f71882fg snd-hda-codec-realtek snd-hda-intel
 else
-  ##### Load modules for Beam Pro #####
+  ##### Load modules for Beam Pro and Beam Pro 1.5 #####
   log_message Change options
   echo options uvcvideo quirks=128 > /etc/modprobe.d/uvcvideo-bandwidth-quirk.conf
   log_message Load modules
@@ -172,6 +175,9 @@ stop udev
 udevd --daemon
 udevadm trigger --action=add
 udevadm settle
+
+##### FIXME: Fix fan(?) permissions
+[ -d /sys/devices/platform/f71882fg.2560 ] && sudo chmod 777 -R /sys/devices/platform/f71882fg.2560
 
 sed -i 's/Connected/Modified/' /home/st/sw-dev/install/data/qml/texclient/StatusView.qml
 sed -i 's/Connected/Modified/' /home/st/sw-dev/install/data/locales/en_US/strings.ts
@@ -194,115 +200,77 @@ fi
 log_message Starting roam-run
 "${RPD_ROOT}/roam-run" "${START_TIME}" &
 
-# NCA-5162 Let texclient handle the brightness.
-
-# Fixme: /sys/kernel/debug doesn't exist
-#log_message Mounting the debug file system
-#mount none -t debugfs /sys/kernel/debug/
-
-##### Detect hardware variants #####
-log_message Detect all of the necessary hardware
-"${RPD_SCRIPTS}/detect_hardware"
-
 ##### Set up hardware, LD_PATH, and PATH environment variables #####
 log_message Setting up environment
 . "${RPD_ENV}/setup.sh"
 
-##### Start DBus #####
-# D-Bus is currently mainly used for Bluetooth
-log_message Bring up dbus
-rm -rf /var/run/dbus
-mkdir -p /var/run/dbus
-chown messagebus:messagebus /var/run/dbus
-dbus-uuidgen --ensure
-dbus-daemon --system --fork
-
-##### Start Bluetooth daemon #####
-log_message Starting bluetooth daemon
-BLUETOOTH_PERMANENT_STORE=/store/config/bluetooth
-if [ ! -e "${BLUETOOTH_PERMANENT_STORE}" ]; then
-  mkdir "${BLUETOOTH_PERMANENT_STORE}"
-fi
-ln -sf "${BLUETOOTH_PERMANENT_STORE}" /var/lib/bluetooth
-/usr/sbin/bluetoothd &
-
 ##### Setup audio for Plus #####
 if [ "${BEAM_PLATFORM}" = "cleveland" ]; then
   log_message Setting up audio...
-  "${RPD_SCRIPTS}/cleveland_hda.sh"
+  # The cleveland script has a delay, running it in parallel
+  # to not slow down startup.
+  "${RPD_SCRIPTS}/cleveland_hda.sh" &
 fi
 
 ##### Setup audio for Pro #####
-if [ "${BEAM_PLATFORM}" = "pro" ]; then
+if [ \( "${BEAM_PLATFORM}" = "pro" \) -o \( "${BEAM_PLATFORM}" = "pro1.5" \) ]; then
   log_message Updating asound.conf...
   rm -f /etc/asound.conf
 
-  case "${HARDWARE_MICROPHONE}" in
-    "staudio")
-      cat >> /etc/asound.conf <<EOF
+  cat >> /etc/asound.conf <<EOF
 pcm.texin {
-        type hw
-        card Audioboard
-        device 0
+    type hw
+    card Audioboard
+    device 0
 }
 
 ctl.texin {
-        type hw
-        card Audioboard
-        device 0
+    type hw
+    card Audioboard
+    device 0
 }
 EOF
-      # Update the firmware on the audio board
-      log_message Starting headboard firmware synchronizer
-      "${RPD_SCRIPTS}/firmware_synchronizer_runner" /home/st/sw-dev/firmware/headboard.stdfu \
-        >> "${STLOG}/firmware_headboard.log" 2>&1 # Backgrounds itself
-    ;;
-  esac
+  # Update the firmware on the audio board
+  log_message Starting headboard firmware synchronizer
+  "${RPD_SCRIPTS}/firmware_synchronizer_runner" /home/st/sw-dev/firmware/headboard.stdfu \
+    >> "${STLOG}/firmware_headboard.log" 2>&1 # Backgrounds itself
 
-  case "${HARDWARE_SPEAKER}" in
-    "staudio")
-      cat >> /etc/asound.conf <<EOF
+  cat >> /etc/asound.conf <<EOF
 pcm.texout {
-        type hw
-        card Audioboard
-        device 0
+    type hw
+    card Audioboard
+    device 0
 }
 
 ctl.texout {
-        type hw
-        card Audioboard
-        device 0
+    type hw
+    card Audioboard
+    device 0
 }
 EOF
-    ;;
-  esac
 fi
 
 ##### Update Motor Board #####
-case "${HARDWARE_MOTORS}" in
-  "st001")
-    # Update the firmware on the audio board
-    log_message Starting st001 firmware synchronizer
+# Update the firmware on the audio board
+log_message Starting st001 firmware synchronizer
 
-    if [ "${BEAM_PLATFORM}" = "cleveland" ]; then
-      STDFU=/home/st/sw-dev/firmware/tx011.stdfu
-      APPROVED=477DCA35
-      APPROVED2=8A1470C6
-    else
-      STDFU=/home/st/sw-dev/firmware/st001_beam.stdfu
-      APPROVED=BE66433A
-      APPROVED2=1484FF23
-    fi
-    # Feel free to add/remove approved-bootloaders below. Each one
-    # should be in a separate --approved-bootloader argument.  The day
-    # we remove an approved bootloader that has shipped to customers,
-    # we'll have to have a way to update that bootloader, however!
-    "${RPD_SCRIPTS}/firmware_synchronizer_runner" "${STDFU}" \
-      --approved-bootloader "${APPROVED}" \
-      --approved-bootloader "${APPROVED2}" \
-        >> "${STLOG}/firmware_st001.log" 2>&1 # Backgrounds itself
-  ;;
-esac
+if [ "${BEAM_PLATFORM}" = "cleveland" ]; then
+  STDFU=/home/st/sw-dev/firmware/tx011.stdfu
+  APPROVED=477DCA35
+  APPROVED2=8A1470C6
+else
+  STDFU=/home/st/sw-dev/firmware/st001_beam.stdfu
+  APPROVED=BE66433A
+  APPROVED2=1484FF23
+fi
+# Feel free to add/remove approved-bootloaders below. Each one
+# should be in a separate --approved-bootloader argument.  The day
+# we remove an approved bootloader that has shipped to customers,
+# we'll have to have a way to update that bootloader, however!
+"${RPD_SCRIPTS}/firmware_synchronizer_runner" "${STDFU}" \
+  --approved-bootloader "${APPROVED}" \
+  --approved-bootloader "${APPROVED2}" \
+    >> "${STLOG}/firmware_st001.log" 2>&1 # Backgrounds itself
 
 ##### Update cameras #####
 if [ "${BEAM_PLATFORM}" = "cleveland" ]; then
@@ -328,7 +296,16 @@ if [ ! -e /store/config/HPS_CLIENT_MODE ]; then
 fi
 
 ##### Setup XOrg configuration file #####
-cp "${RPD_RESOURCES}/xorg_${BEAM_PLATFORM}.conf" /etc/X11/xorg.conf
+# NCA-7808 Work around Intel X video driver bug with a different Xorg.conf
+# Only appears to affect the manufacturing software. We should revisit next
+# time we upgrade xserver-xorg-video-intel
+if [ -e ${ALT_XORG_FILE} ]; then
+  cp ${ALT_XORG_FILE} /etc/X11/xorg.conf
+elif [ -e /var/lib/st/manufacturing ]; then
+  cp "${RPD_RESOURCES}/xorg_${BEAM_PLATFORM}_manufacturing.conf" /etc/X11/xorg.conf
+else
+  cp "${RPD_RESOURCES}/xorg_${BEAM_PLATFORM}.conf" /etc/X11/xorg.conf
+fi
 # Disable X VT switching and mouse cursor if in final mode
 if [ -e /var/lib/st/final ]; then
   mkdir -p /etc/X11
@@ -340,7 +317,9 @@ EOF
 fi
 
 ##### Setup XOrg permissions #####
+usermod -a -G tty st
 usermod -a -G video st
+chmod g+rw /dev/tty8
 chmod u+s /usr/bin/Xorg
 
 ##### Stop splash screen #####
@@ -389,10 +368,4 @@ touch /var/lib/st/system_check/ssl_error
 log_message Starting st-run
 su st -l -c "${RPD_ROOT}/st-run ${START_TIME}"
 
-##### Start httpspawner for manufacturing #####
-if [ "${BEAM_PLATFORM}" = "cleveland" ]; then
-  if [ -e /var/lib/st/manufacturing ]; then
-    start-stop-daemon --start --background --pidfile /var/run/httpspawner.pid -a /home/st/sw-dev/install/scripts/httpspawner
-  fi
-fi
 
