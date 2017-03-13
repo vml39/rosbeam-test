@@ -9,6 +9,10 @@ This repository was established purely for the purpose of knowledge disseminatio
 
 In addition to the disclaimers above and in LICENSE, note that this work is experimental development on open source systems for the purposes of academic research. Please take extra precautions during operation.
 
+## Known good overlay image
+
+We have included a "known good" (as of 03.13.2017) overlay image in the root of this repo.
+
 ## Installation
 
 Dependency:
