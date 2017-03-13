@@ -152,11 +152,12 @@ public:
 	}
 
 	void process_odometry() {
-
 		ros::Rate r(10);
 		double max_last_req = 1.0;
+		time_last_req = ros::Time::now();
 		while (ros::ok()) {
-			double since_last_req = (ros::Time::now() - time_last_req).toSec();
+			ros::Time t = ros::Time::now();
+			double since_last_req = (t - time_last_req).toSec();
 			ROS_INFO("since_last_req: %.3f", since_last_req);
 			if (since_last_req > max_last_req) {
 				// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
