@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/Empty.h>
 #include <tf2_msgs/TFMessage.h>
 
 #include <boost/thread.hpp>
@@ -23,11 +24,24 @@ class bridge_node {
 private:
 	ros::NodeHandle node;
 	ros::Publisher pubOdom, pubTf;
-	ros::Subscriber subVel;
+	ros::Subscriber subVel, subEmpty;
 
 	boost::thread odomThread;
 
 	struct drive_shm *shm;
+
+	bool first_time;
+	struct timespec stat_time;
+	struct drive_status stat;
+
+	double x;
+	double y;
+	double theta;
+	double last_lin_enc, last_ang_enc;
+	bool first_enc;
+
+	ros::Time time_last_req;
+
 public:
 	bool start() {
 		int fd = shm_open(DRIVE_SHM_NAME, O_RDWR, 0);
@@ -46,94 +60,120 @@ public:
 		}
 
 		subVel = node.subscribe("cmd_vel", 2, &bridge_node::sub_vel, this);
+		subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
 
 		pubOdom = node.advertise<nav_msgs::Odometry>("odom", 50);
 		pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
+
+		x = 0.0;
+		y = 0.0;
+		theta = 0.0;
+		first_enc = true;
 
 		odomThread = boost::thread(&bridge_node::process_odometry, this);
 
 		return true;
 	}
 
-	void process_odometry() {
-		bool first_time = true;
-		struct timespec stat_time;
-		struct drive_status stat;
-
-		double x = 0.0;
-		double y = 0.0;
-		double theta = 0.0;
-		double last_lin_enc, last_ang_enc;
-		bool first_enc = true;
-
-		while (ros::ok()) {
-			pthread_mutex_lock(&shm->stat_lock);
-			if (first_time) {
-				first_time = false;
-				stat_time = shm->stat_time;
-			}
-			while (timespec_eq(&stat_time, &shm->stat_time)) {
-				pthread_cond_wait(&shm->stat_cond, &shm->stat_lock);
-			}
+	void publish_odometry() {
+		pthread_mutex_lock(&shm->stat_lock);
+		if (first_time) {
+			first_time = false;
 			stat_time = shm->stat_time;
-			stat = shm->stat;
-			pthread_mutex_unlock(&shm->stat_lock);
+		}
+		while (timespec_eq(&stat_time, &shm->stat_time)) {
+			pthread_cond_wait(&shm->stat_cond, &shm->stat_lock);
+		}
+		stat_time = shm->stat_time;
+		stat = shm->stat;
+		pthread_mutex_unlock(&shm->stat_lock);
 
-			ros::Time time = ros::Time::now();
+		// ROS_INFO("Publishing Odometry");
+		ros::Time time = ros::Time::now();
 
-			double lin_enc = (stat.encoder_1 - stat.encoder_2) * 0.0040578907f;
-			double ang_enc = (stat.encoder_2 + stat.encoder_1) * -0.019415744f;
-			double lin_vel = stat.actualLinearVelocity / 65536.0;
-			double ang_vel = stat.actualAngularVelocity / 65536.0;
+		double lin_enc = (stat.encoder_1 - stat.encoder_2) * 0.0040578907f;
+		double ang_enc = (stat.encoder_2 + stat.encoder_1) * -0.019415744f;
+		double lin_vel = stat.actualLinearVelocity / 65536.0;
+		double ang_vel = stat.actualAngularVelocity / 65536.0;
 
-			if (first_enc) {
-				first_enc = false;
-				last_lin_enc = lin_enc;
-				last_ang_enc = ang_enc;
-				continue;
-			}
-
-			double movement = lin_enc - last_lin_enc;
-			double rotation = ang_enc - last_ang_enc;
+		if (first_enc) {
+			first_enc = false;
 			last_lin_enc = lin_enc;
 			last_ang_enc = ang_enc;
-			x += cos(theta + rotation/2) * movement;
-			y += sin(theta + rotation/2) * movement;
-			theta += rotation;
+			return;
+		}
 
-			nav_msgs::Odometry odom;
-			odom.header.stamp = time;
-			odom.header.frame_id = "odom";
-			odom.child_frame_id = "base_link";
+		double movement = lin_enc - last_lin_enc;
+		double rotation = ang_enc - last_ang_enc;
+		last_lin_enc = lin_enc;
+		last_ang_enc = ang_enc;
 
-			odom.pose.pose.position.x = x;
-			odom.pose.pose.position.y = y;
-			odom.pose.pose.orientation.z = sin(theta/2);
-			odom.pose.pose.orientation.w = cos(theta/2);
+		// add calibration factors
+		double lin_calib = 1.0;
+		double ang_calib = 1.027;
+		double movement_calib = movement * lin_calib;
+		double rotation_calib = rotation * ang_calib;
 
-			odom.twist.twist.linear.x = lin_vel;
-			odom.twist.twist.angular.z = ang_vel;
+		x += cos(theta + rotation_calib/2) * movement_calib;
+		y += sin(theta + rotation_calib/2) * movement_calib;
+		theta += rotation_calib;
 
-			pubOdom.publish(odom);
+		nav_msgs::Odometry odom;
+		odom.header.stamp = time;
+		odom.header.frame_id = "odom";
+		odom.child_frame_id = "base_link";
 
-			geometry_msgs::TransformStamped trans;
-			trans.header.stamp = odom.header.stamp;
-			trans.header.frame_id = odom.header.frame_id;
-			trans.child_frame_id = odom.child_frame_id;
+		odom.pose.pose.position.x = x;
+		odom.pose.pose.position.y = y;
+		odom.pose.pose.orientation.z = sin(theta/2);
+		odom.pose.pose.orientation.w = cos(theta/2);
 
-			trans.transform.translation.x = odom.pose.pose.position.x;
-			trans.transform.translation.y = odom.pose.pose.position.y;
-			trans.transform.translation.z = odom.pose.pose.position.z;
-			trans.transform.rotation = odom.pose.pose.orientation;
+		odom.twist.twist.linear.x = lin_vel;
+		odom.twist.twist.angular.z = ang_vel;
 
-			tf2_msgs::TFMessage tf2msg;
-			tf2msg.transforms.push_back(trans);
-			pubTf.publish(tf2msg);
+		odom.twist.twist.linear.z = movement;
+		odom.twist.twist.angular.x = rotation;
+
+		pubOdom.publish(odom);
+
+		geometry_msgs::TransformStamped trans;
+		trans.header.stamp = odom.header.stamp;
+		trans.header.frame_id = odom.header.frame_id;
+		trans.child_frame_id = odom.child_frame_id;
+
+		trans.transform.translation.x = odom.pose.pose.position.x;
+		trans.transform.translation.y = odom.pose.pose.position.y;
+		trans.transform.translation.z = odom.pose.pose.position.z;
+		trans.transform.rotation = odom.pose.pose.orientation;
+
+		tf2_msgs::TFMessage tf2msg;
+		tf2msg.transforms.push_back(trans);
+		pubTf.publish(tf2msg);
+	}
+
+	void process_odometry() {
+
+		ros::Rate r(10);
+		double max_last_req = 1.0;
+		while (ros::ok()) {
+			double since_last_req = (ros::Time::now() - time_last_req).toSec();
+			ROS_INFO("since_last_req: %.3f", since_last_req);
+			if (since_last_req > max_last_req) {
+				// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
+				publish_odometry();
+			}
+			r.sleep();
 		}
 	}
 
 	void join() {
 		odomThread.join();
+	}
+
+	void sub_empty(std_msgs::Empty msg) {
+		// ROS_INFO("Got publish odom request.");
+		time_last_req = ros::Time::now();
+		publish_odometry();
 	}
 
 	void sub_vel(const geometry_msgs::Twist::ConstPtr& msg) {
