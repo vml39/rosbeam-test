@@ -28,8 +28,14 @@ fi
 # make ours the same so that user processes (e.g. QtWebKit)
 # can use it
 log_message Make /dev/shm accessible to everyone
+#mkdir -p /run/shm
+#chmod 777 /run/shm
+rm -rf /run/shm
+rm -rf /dev/shm
 mkdir -p /run/shm
 chmod 777 /run/shm
+ln -s /run/shm /dev/shm
+chmod 777 /dev/shm
 
 ##### Setup sudoers #####
 log_message Fix sudoers
@@ -190,7 +196,7 @@ if [ -e "/store/config/wifi_dev_mode" ]; then
     /etc/init.d/ssh restart
     sed -i "s#\$6\$p6AryxiVM91\$3zZxBHUaxsHwSmAGENsD71244V/uQWVCOnIhx.xeTa2ocgLn9GxgwwhK0wkbx7ovzg.1icNEG0tEgu2zoWmpM0#\$6\$rounds=5000\$Z/pRC8Pia6f/AA64\$yzeB1EQD8gR70kicAs1/uP8FxUDOCPJGuEadd/bx1V7TxkYXyseBbPHIw2VoZ0xNTnkKwoa1132Y0cYyP4Ppn/#" /home/st/sw-dev/install/scripts/rpd_setup.py
     cat /home/st/sw-dev/install/scripts/rpd_setup.py
-    sed -i 's#"${RPD_BIN}/texclient"#LD_PRELOAD=libtexclient-inject.so ${RPD_BIN}/texclient#' /home/st/sw-dev/install/scripts/texspawner
+    sed -i 's#"${RPD_BIN}/texclient"#LD_DEBUG=all LD_PRELOAD=libtexclient-inject.so ${RPD_BIN}/texclient#' /home/st/sw-dev/install/scripts/texspawner
     cat /home/st/sw-dev/install/scripts/texspawner
     sleep 20 && iptables -t mangle -I INPUT -p icmp -m icmp --icmp-type ping -m string --algo bm --from 28 --to 128 --string "WATCHDOG" -m hashlimit --hashlimit-mode dstport --hashlimit-upto 1/second --hashlimit-htable-expire 200 --hashlimit-htable-gcinterval 100 --hashlimit-name watchdog -j ACCEPT &
   fi
