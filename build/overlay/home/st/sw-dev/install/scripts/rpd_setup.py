@@ -853,6 +853,7 @@ class RpdSetup(object):
       write_file('/etc/hosts', """
 127.0.0.1 localhost local-infr-relay.suitabletech.com crash.suitabletech.com %s
 
+192.168.68.2 rpal-thinkpad.local
 # The following lines are desirable for IPv6 capable hosts
 
 ::1     localhost ip6-localhost ip6-loopback
