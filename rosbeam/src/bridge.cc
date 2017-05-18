@@ -63,7 +63,7 @@ public:
 		subEmpty = node.subscribe("publish_odom", 2, &bridge_node::sub_empty, this);
 
 		pubOdom = node.advertise<nav_msgs::Odometry>("odom", 50);
-		pubTf = node.advertise<tf2_msgs::TFMessage>("/tf", 100);
+		pubTf = node.advertise<tf2_msgs::TFMessage>("tf", 100);
 
 		x = 0.0;
 		y = 0.0;
@@ -158,7 +158,7 @@ public:
 		while (ros::ok()) {
 			ros::Time t = ros::Time::now();
 			double since_last_req = (t - time_last_req).toSec();
-			ROS_INFO("since_last_req: %.3f", since_last_req);
+			// ROS_INFO("since_last_req: %.3f", since_last_req);
 			if (since_last_req > max_last_req) {
 				// ROS_INFO("Publishing odom every %.3f seconds.", r.cycleTime().toSec());
 				publish_odometry();
